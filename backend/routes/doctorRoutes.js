@@ -4,7 +4,6 @@ const Appointment = require('../models/Appointment');
 const router = express.Router();
 const moment = require('moment');
 
-// ✅ Get all doctors
 router.get('/', async (req, res) => {
     try {
         const doctors = await Doctor.find();
@@ -14,7 +13,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// ✅ Get available slots for a doctor
 router.get('/:id/slots', async (req, res) => {
     try {
         const { id } = req.params;
@@ -23,17 +21,14 @@ router.get('/:id/slots', async (req, res) => {
         const doctor = await Doctor.findById(id);
         if (!doctor) return res.status(404).json({ message: "Doctor not found" });
 
-        // Convert working hours to minutes
         const startMinutes = moment.duration(doctor.workingHours.start).asMinutes();
         const endMinutes = moment.duration(doctor.workingHours.end).asMinutes();
 
-        // Fetch all appointments for that date
         const appointments = await Appointment.find({
             doctorId: id,
             date: { $gte: new Date(date), $lt: new Date(date + "T23:59:59.999Z") }
         });
 
-        // Generate all possible slots
         let availableSlots = [];
         for (let time = startMinutes; time < endMinutes; time += 30) {
             const slotTime = moment().startOf('day').minutes(time).format("HH:mm");

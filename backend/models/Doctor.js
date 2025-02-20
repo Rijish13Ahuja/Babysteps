@@ -6,8 +6,8 @@ const doctorSchema = new mongoose.Schema({
         required: true
     },
     workingHours: {
-        start: { type: String, required: true }, // e.g., "09:00"
-        end: { type: String, required: true }   // e.g., "17:00"
+        start: { type: String, required: true }, 
+        end: { type: String, required: true }   
     },
     specialization: {
         type: String,

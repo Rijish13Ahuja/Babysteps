@@ -4,7 +4,7 @@ const Doctor = require('../models/Doctor');
 const router = express.Router();
 const moment = require('moment');
 
-// ✅ Get all appointments
+
 router.get('/', async (req, res) => {
     try {
         const appointments = await Appointment.find().populate('doctorId');
@@ -15,7 +15,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// ✅ Get a single appointment
 router.get('/:id', async (req, res) => {
     try {
         const appointment = await Appointment.findById(req.params.id).populate('doctorId');
@@ -30,21 +29,17 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// ✅ Create a new appointment (with debugging logs & validation)
-// ✅ Create a new appointment (with validation & debugging)
 router.post('/', async (req, res) => {
     console.log("Incoming Appointment Data:", req.body); // Log request payload
 
     try {
         const { doctorId, date, duration, appointmentType, patientName, notes } = req.body;
         
-        // Check if all required fields are provided
         if (!doctorId || !date || !duration || !appointmentType || !patientName) {
             console.error("Error: Missing required fields");
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        // Find doctor
         const doctor = await Doctor.findById(doctorId);
         if (!doctor) {
             console.error("Error: Doctor not found");
@@ -54,30 +49,25 @@ router.post('/', async (req, res) => {
         console.log("Doctor Found:", doctor.name);
         console.log("Doctor Working Hours:", doctor.workingHours);
 
-        // ✅ Convert date properly
         let appointmentDateTime = new Date(date);
         if (isNaN(appointmentDateTime.getTime())) {
             console.error("Error: Invalid date format received");
             return res.status(400).json({ message: "Invalid date format" });
         }
 
-        // ✅ Extract time in HH:mm format
         const appointmentTime = moment(appointmentDateTime).utcOffset(0, true).format("HH:mm");
         const appointmentMinutes = moment.duration(appointmentTime).asMinutes();
         
         console.log("Parsed Appointment Time:", appointmentTime);
 
-        // ✅ Convert doctor working hours to minutes
         const startMinutes = moment.duration(doctor.workingHours.start).asMinutes();
         const endMinutes = moment.duration(doctor.workingHours.end).asMinutes();
 
-        // ✅ Validate time slot is within doctor's working hours
         if (appointmentMinutes < startMinutes || appointmentMinutes + duration > endMinutes) {
             console.error("Error: Appointment time is outside working hours");
             return res.status(400).json({ message: "Appointment time is outside working hours" });
         }
 
-        // ✅ Fetch existing appointments for the same doctor on that date
         const startOfDay = moment(date).startOf('day').toDate();
         const endOfDay = moment(date).endOf('day').toDate();
         
@@ -88,7 +78,6 @@ router.post('/', async (req, res) => {
 
         console.log("Existing Appointments on Date:", existingAppointments);
 
-        // ✅ Check if requested time slot is already booked
         const isConflict = existingAppointments.some(app =>
             moment(app.date).utcOffset(0, true).format("HH:mm") === appointmentTime
         );
@@ -98,7 +87,6 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ message: "Time slot already booked" });
         }
 
-        // ✅ Create new appointment with correct date format
         const appointment = new Appointment({
             doctorId, 
             date: appointmentDateTime.toISOString(), // Ensure correct format
@@ -117,7 +105,6 @@ router.post('/', async (req, res) => {
         res.status(500).json({ message: "Server Error", error: error.message });
     }
 });
-// ✅ Update an appointment
 router.put('/:id', async (req, res) => {
     try {
         const appointment = await Appointment.findById(req.params.id);
@@ -137,7 +124,6 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// ✅ Delete an appointment
 router.delete('/:id', async (req, res) => {
     try {
         const appointment = await Appointment.findByIdAndDelete(req.params.id);
